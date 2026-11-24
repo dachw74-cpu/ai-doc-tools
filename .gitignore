@@ -1,0 +1,20 @@
+# Контакты и внутренние пути — в репозиторий не попадают
+.env
+.env.*
+*.key
+*.token
+secrets/
+config.local.*
+
+# Документы заказчика
+*.docx
+*.xlsx
+*.pdf
+
+# Служебное
+node_modules/
+.DS_Store
+Thumbs.db
+*.log
+временные/
+рабочие/
