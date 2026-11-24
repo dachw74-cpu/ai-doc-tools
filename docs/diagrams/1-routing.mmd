@@ -1,0 +1,66 @@
+%% Схема 1. Маршрутизация к LLM с фолбэком
+%% Источник: tools\model-router\route.mjs, tools\free-models\check.mjs
+flowchart LR
+    Client(["Запрос<br/><small>модель · промпт · max_tokens</small>"])
+
+    subgraph GW["Шлюз маршрутизации"]
+        direction TB
+        NORM["Нормализация запроса"]
+        CLASS["Определение класса задачи<br/><small>документы · код · исследование</small>"]
+        PROF["Выбор профиля<br/><small>default · code · docs · research</small>"]
+        NORM --> CLASS --> PROF
+    end
+
+    subgraph L1["1 · Основная модель"]
+        M1[("Основная модель<br/><small>заданный провайдер</small>")]
+        E1{"Оценка ответа<br/><small>пустой · обрезан</small>"}
+        M1 --> E1
+    end
+
+    subgraph L2["2 · Резервная"]
+        M2[("Резервная модель<br/><small>другой провайдер</small>")]
+        E2{"Оценка"}
+        M2 --> E2
+    end
+
+    subgraph L3["3 · Последний шанс"]
+        M3[("Третья модель")]
+        E3{"Оценка"}
+        M3 --> E3
+    end
+
+    OK(["Результат"])
+    FAIL(["Диагностика<br/><small>все три уровня отказали</small>"])
+    PROV{{"OpenAI · Anthropic · OpenRouter · локальные"}}
+    LOG[("Журнал вызовов<br/><small>модель · токены · время</small>")]
+
+    Client --> GW
+    PROF --> M1
+    E1 -->|"годен"| OK
+    E1 -->|"пустой"| M2
+    E2 -->|"годен"| OK
+    E2 -->|"отказ"| M3
+    E3 -->|"годен"| OK
+    E3 -->|"отказ"| FAIL
+    M1 -.-> PROV
+    M2 -.-> PROV
+    M3 -.-> PROV
+    E1 -.-> LOG
+    E2 -.-> LOG
+    E3 -.-> LOG
+
+    classDef ok fill:#DCFCE7,stroke:#16A34A,stroke-width:1px,color:#14532D
+    classDef bad fill:#FEE2E2,stroke:#DC2626,stroke-width:1px,color:#7F1D1D
+    classDef store fill:#F1F5F9,stroke:#64748B,stroke-width:1px,color:#1E293B
+    classDef cloud fill:#EFF6FF,stroke:#3B82F6,stroke-width:1px,stroke-dasharray:4 3,color:#1E3A8A
+    classDef gate fill:#E0F2FE,stroke:#0284C7,stroke-width:1px,color:#0C4A6E
+    class OK ok
+    class FAIL bad
+    class LOG,M1,M2,M3 store
+    class PROV cloud
+    class NORM,CLASS,PROF gate
+
+    style GW fill:#F8FAFC,stroke:#CBD5E1,stroke-width:1px
+    style L1 fill:#F0FDF4,stroke:#86EFAC,stroke-width:1px
+    style L2 fill:#FEFCE8,stroke:#FDE047,stroke-width:1px
+    style L3 fill:#FEF2F2,stroke:#FCA5A5,stroke-width:1px
