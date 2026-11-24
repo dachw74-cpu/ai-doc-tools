@@ -1,0 +1,72 @@
+%% Схема 3. Архитектура MCP-сервера
+%% Источник: tools\mcp-docs\server.mjs, README.md, smoke.mjs
+%%           рабочие\rag_эп\index — text-embedding-3-large, 3072 dims, 1078 чанков
+flowchart TB
+    Agent(["ИИ-агент<br/><small>Chatbox · Cline</small>"])
+
+    subgraph SRV["MCP-сервер agentdocs · только чтение"]
+        direction TB
+        TR["Транспорт MCP<br/><small>stdio · JSON-RPC</small>"]
+
+        subgraph RD["Чтение"]
+            direction LR
+            R1["docx · dotx<br/><small>текст · таблицы</small>"]
+            R2["xlsx · xlsm<br/><small>листы · формулы</small>"]
+            R3["HTML · MHTML"]
+        end
+
+        subgraph AN["Анализ"]
+            direction LR
+            A1["docx_check<br/><small>целостность ·<br/>сравнение</small>"]
+            A2["docx_revisions<br/><small>правки · авторы</small>"]
+            A3["find_files<br/>search_text"]
+            A4["finals_audit<br/><small>SHA-256 · версии</small>"]
+        end
+
+        subgraph RG["Смысловой поиск"]
+            direction TB
+            G1["Гибридный поиск<br/><small>векторный + лексический</small>"]
+            G2["Объединение по RRF"]
+            G3["Покрытие с весами IDF"]
+            G4["Ссылка на фрагмент<br/><small>файл · абзацы · score</small>"]
+            G1 --> G2 --> G3 --> G4
+        end
+
+        TR --> RD
+        TR --> AN
+        TR --> RG
+    end
+
+    subgraph IDX["RAG-индекс"]
+        direction LR
+        I1["Эмбеддинги<br/><small>text-embedding-3-large</small>"]
+        I2["3072 dims<br/>1078 фрагментов"]
+        I3["29 боевых<br/>документов"]
+    end
+
+    BPM[("Банк вопросов BPMSoft<br/><small>189 вопросов · 15 тем</small>")]
+
+    Agent --> TR
+    G1 --> IDX
+    RG --> BPM
+
+    classDef tool fill:#EFF6FF,stroke:#2563EB,stroke-width:1px,color:#1E3A8A
+    classDef rag fill:#F0FDF4,stroke:#16A34A,stroke-width:1px,color:#14532D
+    classDef store fill:#F1F5F9,stroke:#64748B,stroke-width:1px,color:#1E293B
+    classDef ext fill:#FFFBEB,stroke:#D97706,stroke-width:1px,color:#78350F
+    class R1,R2,R3,A1,A2,A3,A4,TR tool
+    class G1,G2,G3,G4 rag
+    class I1,I2,I3 store
+    class BPM ext
+
+    style SRV fill:#FBFCFE,stroke:#D8E0EA,stroke-width:1px
+    style RD fill:#F8FBFF,stroke:#DBEAFE,stroke-width:1px
+    style AN fill:#F8FBFF,stroke:#DBEAFE,stroke-width:1px
+    style RG fill:#F7FEF9,stroke:#BBF7D0,stroke-width:1px
+    style IDX fill:#FAFBFC,stroke:#E2E8F0,stroke-width:1px
+
+    NOTE["Чистый векторный поиск теряет аббревиатуры (МЧД, MongoDB).<br/>Лексика с весами IDF находит редкие термины, RRF сливает выдачи.<br/>Нет прямого ответа — сервер так и отвечает, а не достраивает логику."]
+    NOTE -.- G3
+
+    classDef note fill:#FFFBEB,stroke:#F59E0B,stroke-width:1px,color:#78350F
+    class NOTE note
