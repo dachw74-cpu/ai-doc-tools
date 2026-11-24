@@ -1,0 +1,55 @@
+%% Схема 2. Разделение зон ответственности ИИ-агентов
+%% Бизнес-контекст: почему роли, а не один «универсальный» агент
+%% Источник: .github\agents\*.agent.md, .clinerules\workflows\*.md
+flowchart TB
+    Dev(["Разработчик"])
+
+    subgraph IDE["VS Code"]
+        CLINE["Cline<br/><small>режимы Plan / Act</small>"]
+
+        subgraph AG["Пять агентов · закреплённые роли"]
+            direction LR
+            A1["Аналитик<br/>документов<br/><small>читает ·<br/>НЕ меняет</small>"]
+            A2["Ревизор ЭП<br/><small>ловит расхождения ·<br/>НЕ правит</small>"]
+            A3["Ревизор писем<br/><small>критикует ·<br/>НЕ пишет за автора</small>"]
+            A4["Тренер BPMSoft<br/><small>готовит к тесту ·<br/>НЕ подсказывает</small>"]
+            A5["Секретарь встреч<br/><small>протокол ·<br/>НЕ додумывает</small>"]
+        end
+
+        MCP["MCP-сервер agentdocs<br/><small>только чтение · самотест</small><br/>+ браузерная автоматизация"]
+    end
+
+    subgraph FS["Рабочая папка"]
+        direction LR
+        F1["Финальные<br/><small>только чтение</small>"]
+        F2["Рабочие<br/><small>черновики</small>"]
+        F3["Входные<br/><small>исходники</small>"]
+    end
+
+    LLM{{"Шлюз LLM с фолбэком"}}
+
+    Dev --> CLINE
+    CLINE --> AG
+    AG --> MCP
+    CLINE --> LLM
+    MCP --> FS
+
+    classDef agent fill:#EFF6FF,stroke:#2563EB,stroke-width:1px,color:#1E3A8A
+    classDef tool fill:#FFF7ED,stroke:#EA580C,stroke-width:1px,color:#7C2D12
+    classDef dir fill:#F8FAFC,stroke:#94A3B8,stroke-width:1px,color:#0F172A
+    classDef cloud fill:#F5F3FF,stroke:#7C3AED,stroke-width:1px,stroke-dasharray:4 3,color:#4C1D95
+    class A1,A2,A3,A4,A5 agent
+    class MCP,CLINE tool
+    class F1,F2,F3 dir
+    class LLM cloud
+
+    style IDE fill:#FCFCFD,stroke:#E2E8F0,stroke-width:1px
+    style AG fill:#F8FBFF,stroke:#BFDBFE,stroke-width:1px
+    style FS fill:#FBFCFD,stroke:#E2E8F0,stroke-width:1px
+
+    %% Бизнес-обоснование
+    NOTE["Почему роли, а не один агент:<br/>универсальный правит то, о чём просили,<br/>и попутно «улучшает» соседнее.<br/>Роль фиксирует инструменты и запреты —<br/>ревизор физически не может испортить документ."]
+    NOTE -.- AG
+
+    classDef note fill:#FFFBEB,stroke:#F59E0B,stroke-width:1px,color:#78350F
+    class NOTE note
